@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\TechnicianVerificationController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\TechnicianProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,10 +32,18 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:technician'])->group(function () {
     Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])
         ->name('bookings.update-status');
+
+    // A technician completes/edits their own profile and document here.
+    Route::get('/technician/profile', [TechnicianProfileController::class, 'edit'])
+        ->name('technician.profile.edit');
+    Route::patch('/technician/profile', [TechnicianProfileController::class, 'update'])
+        ->name('technician.profile.update');
 });
 
 // ---- Admin routes ----
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
     Route::get('/technicians', [TechnicianVerificationController::class, 'index'])->name('technicians.index');
     Route::patch('/technicians/{technician}/approve', [TechnicianVerificationController::class, 'approve'])->name('technicians.approve');
     Route::patch('/technicians/{technician}/reject', [TechnicianVerificationController::class, 'reject'])->name('technicians.reject');
