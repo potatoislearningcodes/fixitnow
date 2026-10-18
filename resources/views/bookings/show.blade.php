@@ -64,6 +64,18 @@
                     @endif
                 </dl>
 
+                {{-- Map --}}
+                <div class="mt-4">
+                    @if ($booking->hasCoordinates())
+                        <div id="booking-map" class="w-full rounded-md border border-gray-200" style="height: 250px;"></div>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('Approximate location based on the address provided.') }}</p>
+                    @else
+                        <div class="w-full rounded-md border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-400" style="height: 100px;">
+                            {{ __('Map location not available for this address.') }}
+                        </div>
+                    @endif
+                </div>
+
                 @if ($isAssignedTechnician && in_array($booking->status, ['pending', 'accepted', 'in_progress']))
                     <form method="POST" action="{{ route('bookings.update-status', $booking) }}" class="mt-6 flex gap-2 flex-wrap">
                         @csrf
@@ -133,4 +145,19 @@
 
         </div>
     </div>
+
+    @if ($booking->hasCoordinates())
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (window.initFixItNowMap) {
+                    window.initFixItNowMap(
+                        'booking-map',
+                        {{ $booking->lat }},
+                        {{ $booking->lng }},
+                        @js($booking->address)
+                    );
+                }
+            });
+        </script>
+    @endif
 </x-app-layout>

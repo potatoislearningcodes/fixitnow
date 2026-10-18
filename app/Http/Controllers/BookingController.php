@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Technician;
+use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
 {
+    public function __construct(
+        private GeocodingService $geocoder
+    ) {}
+
     /** Customer: browse approved technicians before booking. */
     public function create()
     {
@@ -33,8 +38,16 @@ class BookingController extends Controller
             'scheduled_at' => 'required|date|after:now',
         ]);
 
+        // One geocoding lookup per booking submission — a human action,
+        // not a loop, so this stays well within Nominatim's usage policy.
+        // If it fails for any reason, the booking is still created; the
+        // map on the booking page just won't render.
+        $coordinates = $this->geocoder->geocode($validated['address']);
+
         $booking = Booking::create([
             ...$validated,
+            'lat' => $coordinates['lat'] ?? null,
+            'lng' => $coordinates['lng'] ?? null,
             'customer_id' => auth()->id(),
             'status' => 'pending',
         ]);
