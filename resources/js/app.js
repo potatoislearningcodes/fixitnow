@@ -1,4 +1,4 @@
-
+import './map.js';
 
 import Alpine from 'alpinejs';
 

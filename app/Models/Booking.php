@@ -18,6 +18,8 @@ class Booking extends Model
         'description',
         'rooms',
         'address',
+        'lat',
+        'lng',
         'scheduled_at',
         'status', // pending | accepted | in_progress | completed | cancelled
     ];
@@ -26,6 +28,8 @@ class Booking extends Model
     {
         return [
             'scheduled_at' => 'datetime',
+            'lat' => 'float',
+            'lng' => 'float',
         ];
     }
 
@@ -42,6 +46,11 @@ class Booking extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    public function hasCoordinates(): bool
+    {
+        return $this->lat !== null && $this->lng !== null;
     }
 
     /**
