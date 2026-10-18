@@ -12,34 +12,48 @@
                 <div class="font-medium text-sm text-green-600">{{ session('status') }}</div>
             @endif
 
-            {{-- Technician listing --}}
+            {{-- Technician listing (optional pick) --}}
             <div class="bg-white shadow-sm rounded-lg p-6">
-                <h3 class="font-semibold text-gray-800 mb-4">{{ __('Verified Technicians') }}</h3>
+                <h3 class="font-semibold text-gray-800 mb-1">{{ __('Verified Technicians') }}</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    {{ __('Pick one now, or skip this and let an admin assign an available technician for you.') }}
+                </p>
 
                 @if ($technicians->isEmpty())
                     <p class="text-sm text-gray-500">
-                        {{ __('No verified technicians are available yet. Please check back soon.') }}
+                        {{ __('No verified technicians are available yet. You can still submit a request — an admin will assign one.') }}
                     </p>
                 @else
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach ($technicians as $technician)
+                            @php $available = $technician->isAvailable(); @endphp
                             <div class="border border-gray-200 rounded-lg p-4"
                                 :class="selectedId === {{ $technician->id }} ? 'border-indigo-500 ring-1 ring-indigo-500' : ''">
-                                <p class="font-semibold text-gray-800">{{ $technician->user->name }}</p>
+                                <div class="flex items-start justify-between">
+                                    <p class="font-semibold text-gray-800">{{ $technician->user->name }}</p>
+                                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                        {{ $available ? __('Available') : __('Busy') }}
+                                    </span>
+                                </div>
                                 <p class="text-sm text-indigo-600">{{ $technician->specialty }}</p>
                                 @if ($technician->bio)
                                     <p class="text-sm text-gray-600 mt-1">{{ $technician->bio }}</p>
                                 @endif
 
-                                <button type="button"
+                                <button type="button" @if (! $available) disabled @endif
                                     @click="selectedId = {{ $technician->id }}; selectedName = '{{ addslashes($technician->user->name) }}'; $nextTick(() => document.getElementById('booking-form').scrollIntoView({ behavior: 'smooth', block: 'center' }))"
-                                    class="mt-3 px-3 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-md hover:bg-gray-700">
-                                    {{ __('Request this technician') }}
+                                    class="mt-3 px-3 py-1.5 text-white text-xs font-semibold rounded-md {{ $available ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-300 cursor-not-allowed' }}">
+                                    {{ $available ? __('Request this technician') : __('Currently busy') }}
                                 </button>
                             </div>
                         @endforeach
                     </div>
                 @endif
+
+                <button type="button" x-show="selectedId" @click="selectedId = null; selectedName = ''"
+                    class="mt-4 text-xs text-gray-500 underline">
+                    {{ __('Clear selection — let admin assign instead') }}
+                </button>
             </div>
 
             {{-- Booking request form --}}
@@ -49,7 +63,7 @@
                     {{ __('Booking with:') }} <span class="font-semibold" x-text="selectedName"></span>
                 </p>
                 <p class="text-sm text-gray-400 mb-4" x-show="!selectedName">
-                    {{ __('Pick a technician above first.') }}
+                    {{ __('No technician selected — an admin will assign one after you submit.') }}
                 </p>
 
                 <form method="POST" action="{{ route('bookings.store') }}">
@@ -57,14 +71,50 @@
                     <input type="hidden" name="technician_id" x-model="selectedId">
 
                     <div>
-                        <x-input-label for="service_type" :value="__('Service type')" />
+                        <x-input-label :value="__('Type of building')" />
+                        <select name="building_type" required
+                            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                            <option value="">{{ __('Select one') }}</option>
+                            <option value="residential" @selected(old('building_type') === 'residential')>{{ __('Residential (House, Condo unit)') }}</option>
+                            <option value="institutional_business" @selected(old('building_type') === 'institutional_business')>{{ __('Institutional / Business (Office, Company, School)') }}</option>
+                            <option value="hospitality" @selected(old('building_type') === 'hospitality')>{{ __('Hospitality (Hotel, Apartment)') }}</option>
+                        </select>
+                        <x-input-error :messages="$errors->get('building_type')" class="mt-2" />
+                    </div>
+
+                    <div class="mt-4">
+                        <x-input-label :value="__('Service group')" />
+                        <div class="mt-2 flex gap-6">
+                            <label class="flex items-center">
+                                <input type="radio" name="service_group" value="repair"
+                                    {{ old('service_group', 'repair') === 'repair' ? 'checked' : '' }}>
+                                <span class="ms-2 text-sm text-gray-700">{{ __('Repair — something is broken') }}</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="service_group" value="maintenance"
+                                    {{ old('service_group') === 'maintenance' ? 'checked' : '' }}>
+                                <span class="ms-2 text-sm text-gray-700">{{ __('Maintenance — regular check-up') }}</span>
+                            </label>
+                        </div>
+                        <x-input-error :messages="$errors->get('service_group')" class="mt-2" />
+                    </div>
+
+                    <div class="mt-4">
+                        <x-input-label for="service_type" :value="__('Specific service')" />
                         <x-text-input id="service_type" name="service_type" type="text" class="block mt-1 w-full"
-                            value="{{ old('service_type') }}" placeholder="e.g. Leaking faucet repair" required />
+                            value="{{ old('service_type') }}" placeholder="e.g. Leaking faucet repair, Aircon cleaning" required />
                         <x-input-error :messages="$errors->get('service_type')" class="mt-2" />
                     </div>
 
                     <div class="mt-4">
-                        <x-input-label for="description" :value="__('Describe the problem (optional)')" />
+                        <x-input-label for="rooms" :value="__('Room(s) needing service (optional)')" />
+                        <x-text-input id="rooms" name="rooms" type="text" class="block mt-1 w-full"
+                            value="{{ old('rooms') }}" placeholder="e.g. Kitchen, Bathroom, Room 101" />
+                        <x-input-error :messages="$errors->get('rooms')" class="mt-2" />
+                    </div>
+
+                    <div class="mt-4">
+                        <x-input-label for="description" :value="__('Additional details (optional)')" />
                         <textarea id="description" name="description" rows="3"
                             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('description') }}</textarea>
                         <x-input-error :messages="$errors->get('description')" class="mt-2" />
@@ -84,12 +134,8 @@
                         <x-input-error :messages="$errors->get('scheduled_at')" class="mt-2" />
                     </div>
 
-                    <x-input-error :messages="$errors->get('technician_id')" class="mt-2" />
-
                     <div class="mt-6">
-                        <x-primary-button :disabled="false">
-                            {{ __('Send request') }}
-                        </x-primary-button>
+                        <x-primary-button>{{ __('Send request') }}</x-primary-button>
                     </div>
                 </form>
             </div>

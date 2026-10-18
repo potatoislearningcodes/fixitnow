@@ -12,8 +12,11 @@ class Booking extends Model
     protected $fillable = [
         'customer_id',
         'technician_id',
+        'building_type',   // residential | institutional_business | hospitality
         'service_type',
+        'service_group',   // repair | maintenance
         'description',
+        'rooms',
         'address',
         'scheduled_at',
         'status', // pending | accepted | in_progress | completed | cancelled
@@ -39,5 +42,32 @@ class Booking extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    /**
+     * Display label for the status, matching the simpler terminology from
+     * the system guide (Pending / On-going / Repaired) without changing
+     * the underlying database values the rest of the app relies on.
+     */
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            'pending' => 'Pending',
+            'accepted' => 'Accepted',
+            'in_progress' => 'On-going',
+            'completed' => 'Repaired',
+            'cancelled' => 'Cancelled',
+            default => ucfirst($this->status),
+        };
+    }
+
+    public function buildingTypeLabel(): string
+    {
+        return match ($this->building_type) {
+            'residential' => 'Residential',
+            'institutional_business' => 'Institutional / Business',
+            'hospitality' => 'Hospitality',
+            default => '—',
+        };
     }
 }

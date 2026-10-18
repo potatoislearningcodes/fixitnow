@@ -20,8 +20,14 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'technician_id' => 'required|exists:technicians,id',
+            // Nullable: a customer can leave this blank and let an admin
+            // assign an available technician afterward (see
+            // Admin\BookingAssignmentController).
+            'technician_id' => 'nullable|exists:technicians,id',
+            'building_type' => 'required|in:residential,institutional_business,hospitality',
+            'service_group' => 'required|in:repair,maintenance',
             'service_type' => 'required|string|max:255',
+            'rooms' => 'nullable|string|max:500',
             'description' => 'nullable|string|max:1000',
             'address' => 'required|string|max:255',
             'scheduled_at' => 'required|date|after:now',
@@ -72,6 +78,33 @@ class BookingController extends Controller
         // TODO (Integration dev): notify the customer by email on status change.
 
         return back()->with('status', 'Booking status updated.');
+    }
+
+    /**
+     * Technician or admin: record that a completed job was paid, and how.
+     * This is a manual record (cash in hand, a GCash reference, a bank
+     * transfer slip) — not a live payment gateway checkout.
+     */
+    public function recordPayment(Request $request, Booking $booking)
+    {
+        $user = auth()->user();
+        $isAssignedTechnician = $user->isTechnician()
+            && $booking->technician_id === $user->technicianProfile?->id;
+
+        abort_unless($isAssignedTechnician || $user->isAdmin(), 403);
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,gcash,bank_transfer',
+            'reference_number' => 'nullable|required_unless:payment_method,cash|string|max:255',
+        ]);
+
+        $booking->payment()->updateOrCreate(
+            ['booking_id' => $booking->id],
+            [...$validated, 'status' => 'paid']
+        );
+
+        return back()->with('status', 'Payment recorded.');
     }
 
     private function authorizeView(Booking $booking): void

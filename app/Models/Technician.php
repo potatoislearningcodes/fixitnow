@@ -33,6 +33,18 @@ class Technician extends Model
         return $this->verification_status === 'approved';
     }
 
+    /**
+     * "Available" means not currently in the middle of another job.
+     * Computed live from bookings rather than a stored flag, so it can
+     * never drift out of sync with reality.
+     */
+    public function isAvailable(): bool
+    {
+        return ! $this->bookings()
+            ->whereIn('status', ['accepted', 'in_progress'])
+            ->exists();
+    }
+
     /** Only technicians the admin has approved should be bookable by customers. */
     public function scopeApproved($query)
     {
