@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\BookingAssignmentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\TechnicianVerificationController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\TechnicianDashboardController;
 use App\Http\Controllers\TechnicianProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,10 +28,18 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
 // ---- Shared (customer, technician, admin can all view one booking) ----
 Route::middleware(['auth'])->group(function () {
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+
+    // Technician or admin — authorization is checked inside the controller
+    // since it depends on whether the user is the assigned technician.
+    Route::patch('/bookings/{booking}/payment', [BookingController::class, 'recordPayment'])
+        ->name('bookings.record-payment');
 });
 
 // ---- Technician routes ----
 Route::middleware(['auth', 'role:technician'])->group(function () {
+    Route::get('/technician/dashboard', [TechnicianDashboardController::class, 'index'])
+        ->name('technician.dashboard');
+
     Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])
         ->name('bookings.update-status');
 
@@ -47,4 +57,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/technicians', [TechnicianVerificationController::class, 'index'])->name('technicians.index');
     Route::patch('/technicians/{technician}/approve', [TechnicianVerificationController::class, 'approve'])->name('technicians.approve');
     Route::patch('/technicians/{technician}/reject', [TechnicianVerificationController::class, 'reject'])->name('technicians.reject');
+
+    Route::get('/bookings/unassigned', [BookingAssignmentController::class, 'index'])->name('bookings.unassigned');
+    Route::patch('/bookings/{booking}/assign', [BookingAssignmentController::class, 'assign'])->name('bookings.assign');
 });

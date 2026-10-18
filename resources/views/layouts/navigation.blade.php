@@ -20,9 +20,16 @@
                         <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                             {{ __('Admin') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('admin.bookings.unassigned')" :active="request()->routeIs('admin.bookings.unassigned')">
+                            {{ __('Unassigned Bookings') }}
+                        </x-nav-link>
                     @endif
 
                     @if (auth()->user()->isTechnician())
+                        <x-nav-link :href="route('technician.dashboard')" :active="request()->routeIs('technician.dashboard')">
+                            {{ __('My Jobs') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('technician.profile.edit')" :active="request()->routeIs('technician.profile.edit')">
                             {{ __('My Profile') }}
                         </x-nav-link>
@@ -93,9 +100,16 @@
                 <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                     {{ __('Admin') }}
                 </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.bookings.unassigned')" :active="request()->routeIs('admin.bookings.unassigned')">
+                    {{ __('Unassigned Bookings') }}
+                </x-responsive-nav-link>
             @endif
 
             @if (auth()->user()->isTechnician())
+                <x-responsive-nav-link :href="route('technician.dashboard')" :active="request()->routeIs('technician.dashboard')">
+                    {{ __('My Jobs') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('technician.profile.edit')" :active="request()->routeIs('technician.profile.edit')">
                     {{ __('My Profile') }}
                 </x-responsive-nav-link>
