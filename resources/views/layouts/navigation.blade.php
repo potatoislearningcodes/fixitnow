@@ -27,6 +27,12 @@
                             {{ __('My Profile') }}
                         </x-nav-link>
                     @endif
+
+                    @if (auth()->user()->isCustomer())
+                        <x-nav-link :href="route('bookings.create')" :active="request()->routeIs('bookings.*')">
+                            {{ __('Book a Service') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -92,6 +98,12 @@
             @if (auth()->user()->isTechnician())
                 <x-responsive-nav-link :href="route('technician.profile.edit')" :active="request()->routeIs('technician.profile.edit')">
                     {{ __('My Profile') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (auth()->user()->isCustomer())
+                <x-responsive-nav-link :href="route('bookings.create')" :active="request()->routeIs('bookings.*')">
+                    {{ __('Book a Service') }}
                 </x-responsive-nav-link>
             @endif
         </div>
