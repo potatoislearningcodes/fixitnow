@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Technician;
+use App\Notifications\BookingConfirmed;
+use App\Notifications\BookingStatusChanged;
 use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 
@@ -52,7 +54,7 @@ class BookingController extends Controller
             'status' => 'pending',
         ]);
 
-        // TODO (Integration dev): fire a BookingCreated notification/email here.
+        $booking->customer->notify(new BookingConfirmed($booking));
 
         return redirect()
             ->route('bookings.show', $booking)
@@ -82,13 +84,17 @@ class BookingController extends Controller
     /** Technician: update the status of a booking assigned to them. */
     public function updateStatus(Request $request, Booking $booking)
     {
+        // Only the technician assigned to this booking may change its status.
+        $technician = auth()->user()->technicianProfile;
+        abort_unless($technician && $booking->technician_id === $technician->id, 403);
+
         $validated = $request->validate([
             'status' => 'required|in:accepted,in_progress,completed,cancelled',
         ]);
 
         $booking->update($validated);
 
-        // TODO (Integration dev): notify the customer by email on status change.
+        $booking->customer->notify(new BookingStatusChanged($booking));
 
         return back()->with('status', 'Booking status updated.');
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Technician;
+use App\Notifications\TechnicianAssigned;
 use Illuminate\Http\Request;
 
 /**
@@ -41,6 +42,8 @@ class BookingAssignmentController extends Controller
         abort_unless($technician->isApproved() && $technician->isAvailable(), 422, 'That technician is not available.');
 
         $booking->update(['technician_id' => $technician->id]);
+
+        $technician->user->notify(new TechnicianAssigned($booking));
 
         return back()->with('status', "Assigned to {$technician->user->name}.");
     }
