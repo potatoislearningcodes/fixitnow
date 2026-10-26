@@ -36,7 +36,10 @@
                     @endif
 
                     @if (auth()->user()->isCustomer())
-                        <x-nav-link :href="route('bookings.create')" :active="request()->routeIs('bookings.*')">
+                        <x-nav-link :href="route('bookings.index')" :active="request()->routeIs('bookings.index') || request()->routeIs('bookings.show')">
+                            {{ __('My Bookings') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('bookings.create')" :active="request()->routeIs('bookings.create')">
                             {{ __('Book a Service') }}
                         </x-nav-link>
                     @endif
@@ -116,7 +119,10 @@
             @endif
 
             @if (auth()->user()->isCustomer())
-                <x-responsive-nav-link :href="route('bookings.create')" :active="request()->routeIs('bookings.*')">
+                <x-responsive-nav-link :href="route('bookings.index')" :active="request()->routeIs('bookings.index') || request()->routeIs('bookings.show')">
+                    {{ __('My Bookings') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('bookings.create')" :active="request()->routeIs('bookings.create')">
                     {{ __('Book a Service') }}
                 </x-responsive-nav-link>
             @endif
